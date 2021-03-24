@@ -1,0 +1,106 @@
+services:
+  - name: quay.io/ebi-ait/ingest-base-images:docker-dind
+    alias: docker
+
+build:
+  stage: build
+  tags:
+    - dind
+  script:
+    - echo $QUAY_PASSWORD | docker login quay.io -u $QUAY_USERNAME --password-stdin
+    - docker build -t $IMAGE_NAME .
+    - docker push $IMAGE_NAME
+
+release-dev:
+  stage: release-dev
+  only:
+    - dev
+  tags:
+    - dind
+  script:
+    - echo $QUAY_PASSWORD | docker login quay.io -u $QUAY_USERNAME --password-stdin
+    - docker pull $IMAGE_NAME
+    - docker tag $IMAGE_NAME $DEV_RELEASE_IMAGE
+    - docker push $DEV_RELEASE_IMAGE
+
+release-master:
+  stage: release-master
+  only:
+    - master
+  tags:
+    - dind
+  script:
+    - echo $QUAY_PASSWORD | docker login quay.io -u $QUAY_USERNAME --password-stdin
+    - docker pull $IMAGE_NAME
+    - docker tag $IMAGE_NAME $MASTER_RELEASE_IMAGE
+    - docker push $MASTER_RELEASE_IMAGE
+
+deploy-dev:
+  stage: deploy-dev
+  only:
+    - dev
+  image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
+  environment:
+    name: dev
+    url: https://dev.contribute.data.humancellatlas.org/
+    kubernetes:
+      namespace: dev-environment
+  script:
+    - helm package k8s/$APP_NAME
+    - helm upgrade -f k8s/dev.yaml $APP_NAME k8s/$APP_NAME --set-string environment=dev,image=$DEV_RELEASE_IMAGE,replicas=$DEV_REPLICAS --wait --install
+
+integration-dev:
+  stage: integration-dev
+  only:
+    - dev
+  trigger: 
+    project: hca/ingest-integration-tests
+    branch: dev
+    strategy: depend
+
+deploy-staging:
+  stage: deploy-staging
+  only:
+    - master
+  image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
+  environment:
+    name: staging
+    url: https://staging.contribute.data.humancellatlas.org/
+    kubernetes:
+      namespace: staging-environment
+  script:
+    - helm package k8s/$APP_NAME
+    - helm upgrade -f k8s/staging.yaml $APP_NAME k8s/$APP_NAME --set-string environment=staging,image=$MASTER_RELEASE_IMAGE,replicas=$STAGING_REPLICAS --wait --install
+
+integration-staging:
+  stage: integration-staging
+  only:
+    - master
+  trigger:
+    project: hca/ingest-integration-tests
+    branch: staging
+    strategy: depend
+
+deploy-prod:
+  stage: deploy-prod
+  only:
+    - master
+  when: manual
+  image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
+  environment:
+    name: prod
+    url: https://contribute.data.humancellatlas.org/
+    kubernetes:
+      namespace: prod-environment
+  script:
+    - helm package k8s/$APP_NAME
+    - helm upgrade -f k8s/prod.yaml $APP_NAME k8s/$APP_NAME --set-string environment=prod,image=$MASTER_RELEASE_IMAGE,replicas=$PROD_REPLICAS --wait --install
+
+integration-prod:
+  stage: integration-prod
+  only:
+    - master
+  trigger:
+    project: hca/ingest-integration-tests
+    branch: prod
+    strategy: depend
