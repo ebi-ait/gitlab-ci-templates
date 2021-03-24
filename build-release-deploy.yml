@@ -1,8 +1,35 @@
+# Template for standard CI/CD process for HCA projects
+
 services:
   - name: quay.io/ebi-ait/ingest-base-images:docker-dind
     alias: docker
 
-build:
+# Override these variables in project .gitlab-ci.yaml as required
+variables:
+  APP_NAME: $CI_PROJECT_NAME
+  DEV_REPLICAS: 1
+  STAGING_REPLICAS: 1
+  PROD_REPLICAS: 1
+  IMAGE_NAME: quay.io/ebi-ait/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA
+  DEV_RELEASE_IMAGE: quay.io/ebi-ait/$CI_PROJECT_NAME:latest-dev
+  MASTER_RELEASE_IMAGE: quay.io/ebi-ait/$CI_PROJECT_NAME:latest
+
+# Override these variables in project .gitlab-ci.yaml as required
+# If another stage is added to project .gitlab-ci.yaml, all stages will need to be specified in project .gitlab-ci.yaml
+# For example, you may want to add a unit-test stage
+stages:
+  - build
+  - release-dev
+  - release-master
+  - deploy-dev
+  - integration-dev
+  - deploy-staging
+  - integration-staging
+  - deploy-prod
+  - integration-prod
+
+
+Build:
   stage: build
   tags:
     - dind
@@ -11,7 +38,7 @@ build:
     - docker build -t $IMAGE_NAME .
     - docker push $IMAGE_NAME
 
-release-dev:
+Release dev:
   stage: release-dev
   only:
     - dev
@@ -23,7 +50,7 @@ release-dev:
     - docker tag $IMAGE_NAME $DEV_RELEASE_IMAGE
     - docker push $DEV_RELEASE_IMAGE
 
-release-master:
+Release master:
   stage: release-master
   only:
     - master
@@ -35,7 +62,7 @@ release-master:
     - docker tag $IMAGE_NAME $MASTER_RELEASE_IMAGE
     - docker push $MASTER_RELEASE_IMAGE
 
-deploy-dev:
+Deploy dev:
   stage: deploy-dev
   only:
     - dev
@@ -49,7 +76,7 @@ deploy-dev:
     - helm package k8s/$APP_NAME
     - helm upgrade -f k8s/dev.yaml $APP_NAME k8s/$APP_NAME --set-string environment=dev,image=$DEV_RELEASE_IMAGE,replicas=$DEV_REPLICAS --wait --install
 
-integration-dev:
+Integration dev:
   stage: integration-dev
   only:
     - dev
@@ -58,7 +85,7 @@ integration-dev:
     branch: dev
     strategy: depend
 
-deploy-staging:
+Deploy staging:
   stage: deploy-staging
   only:
     - master
@@ -72,7 +99,7 @@ deploy-staging:
     - helm package k8s/$APP_NAME
     - helm upgrade -f k8s/staging.yaml $APP_NAME k8s/$APP_NAME --set-string environment=staging,image=$MASTER_RELEASE_IMAGE,replicas=$STAGING_REPLICAS --wait --install
 
-integration-staging:
+Integration staging:
   stage: integration-staging
   only:
     - master
@@ -81,7 +108,7 @@ integration-staging:
     branch: staging
     strategy: depend
 
-deploy-prod:
+Deploy prod:
   stage: deploy-prod
   only:
     - master
@@ -96,7 +123,7 @@ deploy-prod:
     - helm package k8s/$APP_NAME
     - helm upgrade -f k8s/prod.yaml $APP_NAME k8s/$APP_NAME --set-string environment=prod,image=$MASTER_RELEASE_IMAGE,replicas=$PROD_REPLICAS --wait --install
 
-integration-prod:
+Integration prod:
   stage: integration-prod
   only:
     - master
