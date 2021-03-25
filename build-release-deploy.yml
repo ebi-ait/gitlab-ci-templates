@@ -68,7 +68,7 @@ Deploy dev:
       namespace: dev-environment
   script:
     - helm package k8s/$APP_NAME
-    - helm upgrade -f k8s/dev.yaml $APP_NAME k8s/$APP_NAME --set-string environment=dev,image=$DEV_RELEASE_IMAGE,replicas=$DEV_REPLICAS --wait --install
+    - helm upgrade -f k8s/dev.yaml $APP_NAME k8s/$APP_NAME --set-string environment=dev,image=$DEV_RELEASE_IMAGE,replicas=$DEV_REPLICAS,gitlab_app=CI_PROJECT_PATH_SLUG,gitlab_env=CI_ENVIRONMENT_SLUG --wait --install
 
 Integration dev:
   stage: integration
@@ -92,7 +92,7 @@ Deploy staging:
       namespace: staging-environment
   script:
     - helm package k8s/$APP_NAME
-    - helm upgrade -f k8s/staging.yaml $APP_NAME k8s/$APP_NAME --set-string environment=staging,image=$MASTER_RELEASE_IMAGE,replicas=$STAGING_REPLICAS --wait --install
+    - helm upgrade -f k8s/staging.yaml $APP_NAME k8s/$APP_NAME --set-string environment=staging,image=$MASTER_RELEASE_IMAGE,replicas=$STAGING_REPLICAS,gitlab_app=CI_PROJECT_PATH_SLUG,gitlab_env=CI_ENVIRONMENT_SLUG --wait --install
 
 Integration staging:
   stage: integration
@@ -117,7 +117,7 @@ Deploy prod:
       namespace: prod-environment
   script:
     - helm package k8s/$APP_NAME
-    - helm upgrade -f k8s/prod.yaml $APP_NAME k8s/$APP_NAME --set-string environment=prod,image=$MASTER_RELEASE_IMAGE,replicas=$PROD_REPLICAS --wait --install
+    - helm upgrade -f k8s/prod.yaml $APP_NAME k8s/$APP_NAME --set-string environment=prod,image=$MASTER_RELEASE_IMAGE,replicas=$PROD_REPLICAS,gitlab_app=CI_PROJECT_PATH_SLUG,gitlab_env=CI_ENVIRONMENT_SLUG --wait --install
 
 Integration prod:
   stage: integration
