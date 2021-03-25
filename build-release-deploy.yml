@@ -19,14 +19,10 @@ variables:
 # For example, you may want to add a unit-test stage
 stages:
   - build
-  - release-dev
-  - release-master
-  - deploy-dev
-  - integration-dev
-  - deploy-staging
-  - integration-staging
-  - deploy-prod
-  - integration-prod
+  - release
+  - release
+  - deploy
+  - integration
 
 
 Build:
@@ -39,7 +35,7 @@ Build:
     - docker push $IMAGE_NAME
 
 Release dev:
-  stage: release-dev
+  stage: release
   only:
     - dev
   tags:
@@ -51,7 +47,7 @@ Release dev:
     - docker push $DEV_RELEASE_IMAGE
 
 Release master:
-  stage: release-master
+  stage: release
   only:
     - master
   tags:
@@ -63,7 +59,7 @@ Release master:
     - docker push $MASTER_RELEASE_IMAGE
 
 Deploy dev:
-  stage: deploy-dev
+  stage: deploy
   only:
     - dev
   image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
@@ -77,7 +73,8 @@ Deploy dev:
     - helm upgrade -f k8s/dev.yaml $APP_NAME k8s/$APP_NAME --set-string environment=dev,image=$DEV_RELEASE_IMAGE,replicas=$DEV_REPLICAS --wait --install
 
 Integration dev:
-  stage: integration-dev
+  stage: integration
+  needs: ["Deploy dev"]
   only:
     - dev
   trigger: 
@@ -86,7 +83,7 @@ Integration dev:
     strategy: depend
 
 Deploy staging:
-  stage: deploy-staging
+  stage: deploy
   only:
     - master
   image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
@@ -100,7 +97,8 @@ Deploy staging:
     - helm upgrade -f k8s/staging.yaml $APP_NAME k8s/$APP_NAME --set-string environment=staging,image=$MASTER_RELEASE_IMAGE,replicas=$STAGING_REPLICAS --wait --install
 
 Integration staging:
-  stage: integration-staging
+  stage: integration
+  needs: ["Deploy staging"]
   only:
     - master
   trigger:
@@ -109,7 +107,7 @@ Integration staging:
     strategy: depend
 
 Deploy prod:
-  stage: deploy-prod
+  stage: deploy
   only:
     - master
   when: manual
@@ -124,7 +122,8 @@ Deploy prod:
     - helm upgrade -f k8s/prod.yaml $APP_NAME k8s/$APP_NAME --set-string environment=prod,image=$MASTER_RELEASE_IMAGE,replicas=$PROD_REPLICAS --wait --install
 
 Integration prod:
-  stage: integration-prod
+  stage: integration
+  needs: ["Deploy prod"]
   only:
     - master
   trigger:
