@@ -109,6 +109,7 @@ Deploy prod:
   only:
     - master
   when: manual
+  allow_failure: false
   image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
   environment:
     name: prod
