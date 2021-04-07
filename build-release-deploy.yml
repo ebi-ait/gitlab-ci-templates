@@ -13,8 +13,9 @@ variables:
   IMAGE_NAME: quay.io/ebi-ait/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA
   DEV_RELEASE_IMAGE: quay.io/ebi-ait/$CI_PROJECT_NAME:latest-dev
   MASTER_RELEASE_IMAGE: quay.io/ebi-ait/$CI_PROJECT_NAME:latest
+  # Repository that contains share YAMLs that are used across all ingest components. E.g. dev.yaml, staging.yaml and prod.yaml
   SHARED_CONFIG_REPO: https://github.com/ebi-ait/ingest-kube-deployment.git
-  SHARED_CONFIG_DIR: config
+  SHARED_CONFIG_DIR: apps
 
 # Override these variables in project .gitlab-ci.yaml as required
 # If another stage is added to project .gitlab-ci.yaml, all stages will need to be specified in project .gitlab-ci.yaml
