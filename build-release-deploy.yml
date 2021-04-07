@@ -13,6 +13,8 @@ variables:
   IMAGE_NAME: quay.io/ebi-ait/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA
   DEV_RELEASE_IMAGE: quay.io/ebi-ait/$CI_PROJECT_NAME:latest-dev
   MASTER_RELEASE_IMAGE: quay.io/ebi-ait/$CI_PROJECT_NAME:latest
+  SHARED_CONFIG_REPO: https://github.com/ebi-ait/ingest-kube-deployment.git
+  SHARED_CONFIG_DIR: config
 
 # Override these variables in project .gitlab-ci.yaml as required
 # If another stage is added to project .gitlab-ci.yaml, all stages will need to be specified in project .gitlab-ci.yaml
@@ -67,8 +69,9 @@ Deploy dev:
     kubernetes:
       namespace: dev-environment
   script:
+    - git clone $SHARED_CONFIG_REPO shared_config
     - helm package k8s/$APP_NAME
-    - helm upgrade -f k8s/dev.yaml $APP_NAME k8s/$APP_NAME --set-string environment=dev,image=$DEV_RELEASE_IMAGE,replicas=$DEV_REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
+    - helm upgrade -f shared_config/$SHARED_CONFIG_DIR/dev.yaml $APP_NAME k8s/$APP_NAME --set-string environment=dev,image=$DEV_RELEASE_IMAGE,replicas=$DEV_REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
 
 Integration dev:
   stage: integration
@@ -91,8 +94,9 @@ Deploy staging:
     kubernetes:
       namespace: staging-environment
   script:
+    - git clone $SHARED_CONFIG_REPO shared_config
     - helm package k8s/$APP_NAME
-    - helm upgrade -f k8s/staging.yaml $APP_NAME k8s/$APP_NAME --set-string environment=staging,image=$MASTER_RELEASE_IMAGE,replicas=$STAGING_REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
+    - helm upgrade -f shared_config/$SHARED_CONFIG_DIR/staging.yaml $APP_NAME k8s/$APP_NAME --set-string environment=staging,image=$MASTER_RELEASE_IMAGE,replicas=$STAGING_REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
 
 Integration staging:
   stage: integration
@@ -117,8 +121,9 @@ Deploy prod:
     kubernetes:
       namespace: prod-environment
   script:
+    - git clone $SHARED_CONFIG_REPO shared_config
     - helm package k8s/$APP_NAME
-    - helm upgrade -f k8s/prod.yaml $APP_NAME k8s/$APP_NAME --set-string environment=prod,image=$MASTER_RELEASE_IMAGE,replicas=$PROD_REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
+    - helm upgrade -f shared_config/$SHARED_CONFIG_DIR/prod.yaml $APP_NAME k8s/$APP_NAME --set-string environment=prod,image=$MASTER_RELEASE_IMAGE,replicas=$PROD_REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
 
 Integration prod:
   stage: integration
