@@ -25,6 +25,13 @@ stages:
   - deploy
   - integration
 
+workflow:
+  - rules:
+    - if: '$CI_PIPELINE_SOURCE = "external_pull_request_event"'
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "dev"
+
+
 Build:
   stage: build
   tags:
