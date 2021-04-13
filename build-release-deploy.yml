@@ -1,5 +1,4 @@
 # Template for standard CI/CD process for HCA projects
-
 services:
   - name: quay.io/ebi-ait/ingest-base-images:docker-dind
     alias: docker
@@ -7,19 +6,16 @@ services:
 # Override these variables in project .gitlab-ci.yaml as required
 variables:
   APP_NAME: $CI_PROJECT_NAME
-  DEV_REPLICAS: 1
-  STAGING_REPLICAS: 1
-  PROD_REPLICAS: 1
-  IMAGE_NAME: quay.io/ebi-ait/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA
-  DEV_RELEASE_IMAGE: quay.io/ebi-ait/$CI_PROJECT_NAME:latest-dev
-  MASTER_RELEASE_IMAGE: quay.io/ebi-ait/$CI_PROJECT_NAME:latest
-  # Repository that contains shared YAMLs that are used across all ingest components. E.g. dev.yaml, staging.yaml, and prod.yaml
-  SHARED_CONFIG_REPO: https://github.com/ebi-ait/ingest-kube-deployment.git
-  SHARED_CONFIG_DIR: apps
+  IMAGE_NAME: quay.io/ebi-ait/$APP_NAME:$CI_COMMIT_SHORT_SHA
+  DEV_RELEASE_IMAGE: quay.io/ebi-ait/$APP_NAME:dev-
+  STAGING_RELEASE_IMAGE: quay.io/ebi-ait/$APP_NAME:staging-
+  PROD_RELEASE_IMAGE: quay.io/ebi-ait/$APP_NAME:prod-
+  INGEST_KUBE_DEPLOYMENT_REPO: https://github.com/ebi-ait/ingest-kube-deployment.git
 
 # If another stage is added to project .gitlab-ci.yaml, all stages will need to be specified in project .gitlab-ci.yaml
 # For example, you may want to add a unit-test stage
 stages:
+  - test
   - build
   - release
   - deploy
@@ -31,6 +27,10 @@ workflow:
     - if: $CI_COMMIT_BRANCH == "master"
     - if: $CI_COMMIT_BRANCH == "dev"
 
+Test:
+  stage: test
+  script:
+    - echo "No tests specified. Please create a \"Test\" job in the project template that runs on the \"test\" stage."
 
 Build:
   stage: build
@@ -41,103 +41,116 @@ Build:
     - docker build -t $IMAGE_NAME .
     - docker push $IMAGE_NAME
 
-Release dev:
+# Reusable job for re-tagging an image
+# Must set the $IMAGE_TAG variable in the job that uses this
+.tag_image: &tag_image
   stage: release
-  only:
-    - dev
   tags:
     - dind
   script:
     - echo $QUAY_PASSWORD | docker login quay.io -u $QUAY_USERNAME --password-stdin
     - docker pull $IMAGE_NAME
-    - docker tag $IMAGE_NAME $DEV_RELEASE_IMAGE
-    - docker push $DEV_RELEASE_IMAGE
+    - docker tag $IMAGE_NAME $IMAGE_TAG
+    - docker push $IMAGE_TAG
 
-Release master:
-  stage: release
-  only:
-    - master
-  tags:
-    - dind
-  script:
-    - echo $QUAY_PASSWORD | docker login quay.io -u $QUAY_USERNAME --password-stdin
-    - docker pull $IMAGE_NAME
-    - docker tag $IMAGE_NAME $MASTER_RELEASE_IMAGE
-    - docker push $MASTER_RELEASE_IMAGE
-
-Deploy dev:
+# Reusable job for deploying to k8s
+# Must set $ENVIRONMENT_NAME, $DEPLOY_URL, and $DEPLOY_IMAGE in the job that uses this
+.deploy_k8s: &deploy_k8s
   stage: deploy
-  only:
-    - dev
   image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
   environment:
-    name: dev
-    url: https://dev.contribute.data.humancellatlas.org/
+    name: $ENVIRONMENT_NAME
+    url: $DEPLOY_URL
     kubernetes:
-      namespace: dev-environment
+      namespace: $ENVIRONMENT_NAME-environment
   script:
-    - git clone $SHARED_CONFIG_REPO shared_config
-    - helm package k8s/$APP_NAME
-    - helm upgrade -f shared_config/$SHARED_CONFIG_DIR/dev.yaml $APP_NAME k8s/$APP_NAME --set-string environment=dev,image=$DEV_RELEASE_IMAGE,replicas=$DEV_REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
+    - git clone $INGEST_KUBE_DEPLOYMENT_REPO k8s
+    - source k8s/config/environment_$ENVIRONMENT_NAME
+    - REPLICAS=$(echo $APP_NAME | sed 's/-/_/' | tr '[:lower:]' '[:upper:]')_REPLICAS
+    - echo deploying $APP_NAME with $REPLICAS replicas
+    - helm package k8s/apps/$APP_NAME
+    - helm upgrade -f k8s/apps/$ENVIRONMENT_NAME.yaml $APP_NAME k8s/apps/$APP_NAME --set-string environment=dev,image=$DEPLOY_IMAGE,replicas=$REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
 
-Integration dev:
+# Reusable job for running integration tests
+# Must set $ENVIRONMENT_NAME in the job that uses this
+.run_integration: &run_integration
   stage: integration
-  needs: ["Deploy dev"]
-  only:
-    - dev
-  trigger: 
-    project: hca/ingest-integration-tests
-    branch: dev
-    strategy: depend
-
-Deploy staging:
-  stage: deploy
-  only:
-    - master
-  image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
-  environment:
-    name: staging
-    url: https://staging.contribute.data.humancellatlas.org/
-    kubernetes:
-      namespace: staging-environment
-  script:
-    - git clone $SHARED_CONFIG_REPO shared_config
-    - helm package k8s/$APP_NAME
-    - helm upgrade -f shared_config/$SHARED_CONFIG_DIR/staging.yaml $APP_NAME k8s/$APP_NAME --set-string environment=staging,image=$MASTER_RELEASE_IMAGE,replicas=$STAGING_REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
-
-Integration staging:
-  stage: integration
-  needs: ["Deploy staging"]
-  only:
-    - master
   trigger:
     project: hca/ingest-integration-tests
-    branch: staging
+    branch: $ENVIRONMENT_NAME
     strategy: depend
 
-Deploy prod:
-  stage: deploy
+Release dev:
+  only:
+    - dev
+  variables:
+    - IMAGE_TAG: $DEV_RELEASE_IMAGE
+  <<: *tag_image 
+
+Release staging:
+  only:
+    - master
+  variables:
+    - IMAGE_TAG: $STAGING_RELEASE_IMAGE
+  <<: *tag_image 
+
+Release prod:
   only:
     - master
   when: manual
   allow_failure: false
-  image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
-  environment:
-    name: prod
-    url: https://contribute.data.humancellatlas.org/
-    kubernetes:
-      namespace: prod-environment
-  script:
-    - git clone $SHARED_CONFIG_REPO shared_config
-    - helm package k8s/$APP_NAME
-    - helm upgrade -f shared_config/$SHARED_CONFIG_DIR/prod.yaml $APP_NAME k8s/$APP_NAME --set-string environment=prod,image=$MASTER_RELEASE_IMAGE,replicas=$PROD_REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
+  variables:
+    - IMAGE_TAG: $PROD_RELEASE_IMAGE
+  <<: *tag_image 
+
+Deploy dev:
+  only:
+    - dev
+  variables:
+    - ENVIRONMENT_NAME: dev
+    - DEPLOY_URL: https://dev.contribute.data.humancellatlas.org/
+    - DEPLOY_IMAGE: $DEV_RELEASE_IMAGE
+  <<: *deploy_k8s
+
+Deploy staging:
+  only:
+    - master
+  variables:
+    - ENVIRONMENT_NAME: staging
+    - DEPLOY_URL: https://staging.contribute.data.humancellatlas.org/
+    - DEPLOY_IMAGE: $STAGING_RELEASE_IMAGE
+  <<: *deploy_k8s
+
+Deploy prod:
+  only:
+    - master
+  when: manual
+  needs: ["Release prod"]
+  allow_failure: false
+  variables:
+    - ENVIRONMENT_NAME: prod
+    - DEPLOY_URL: https://contribute.data.humancellatlas.org/
+    - DEPLOY_IMAGE: $PROD_RELEASE_IMAGE
+  <<: *deploy_k8s
+
+Integration dev:
+  only:
+    - dev
+  variables:
+    - ENVIRONMENT_NAME: dev
+  <<: *run_integration
+
+Integration staging:
+  only:
+    - dev
+  variables:
+    - ENVIRONMENT_NAME: staging
+  <<: *run_integration
 
 Integration prod:
-  stage: integration
   needs: ["Deploy prod"]
   only:
     - master
-  trigger:
-    project: hca/ingest-integration-tests
-    branch: prod
-    strategy: depend
+  variables:
+    - ENVIRONMENT_NAME: prod
+  <<: *run_integration
