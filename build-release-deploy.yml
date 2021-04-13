@@ -7,9 +7,10 @@ services:
 variables:
   APP_NAME: $CI_PROJECT_NAME
   IMAGE_NAME: quay.io/ebi-ait/$APP_NAME:$CI_COMMIT_SHORT_SHA
-  DEV_RELEASE_IMAGE: quay.io/ebi-ait/$APP_NAME:dev-
-  STAGING_RELEASE_IMAGE: quay.io/ebi-ait/$APP_NAME:staging-
-  PROD_RELEASE_IMAGE: quay.io/ebi-ait/$APP_NAME:prod-
+  TIMESTAMP: $(date +'%d-%m-%Y_%s')
+  DEV_RELEASE_IMAGE: quay.io/ebi-ait/$APP_NAME:dev-$TIMESTAMP
+  STAGING_RELEASE_IMAGE: quay.io/ebi-ait/$APP_NAME:staging-$TIMESTAMP
+  PROD_RELEASE_IMAGE: quay.io/ebi-ait/$APP_NAME:prod-$TIMESTAMP
   INGEST_KUBE_DEPLOYMENT_REPO: https://github.com/ebi-ait/ingest-kube-deployment.git
 
 # If another stage is added to project .gitlab-ci.yaml, all stages will need to be specified in project .gitlab-ci.yaml
