@@ -39,7 +39,7 @@ Build:
     - docker push $IMAGE_NAME
 
 # Reusable job for re-tagging an image
-# Must set the $IMAGE_TAG variable in the job that uses this
+# Must set the $ENVIRONMENT_NAME variable in the job that uses this
 .tag_image: &tag_image
   stage: release
   tags:
@@ -47,11 +47,11 @@ Build:
   script:
     - echo $QUAY_PASSWORD | docker login quay.io -u $QUAY_USERNAME --password-stdin
     - docker pull $IMAGE_NAME
-    - docker tag $IMAGE_NAME $IMAGE_TAG
-    - docker push $IMAGE_TAG
+    - docker tag $IMAGE_NAME quay.io/ebi-ait/$CI_PROJECT_NAME:$ENVIRONMENT_NAME-$CI_COMMIT_SHORT_SHA-$CI_PIPELINE_CREATED_AT
+    - docker push quay.io/ebi-ait/$CI_PROJECT_NAME:$ENVIRONMENT_NAME-$CI_COMMIT_SHORT_SHA-$CI_PIPELINE_CREATED_AT
 
 # Reusable job for deploying to k8s
-# Must set $ENVIRONMENT_NAME, $DEPLOY_URL, and $DEPLOY_IMAGE in the job that uses this
+# Must set $ENVIRONMENT_NAME, $DEPLOY_URL in the job that uses this
 .deploy_k8s: &deploy_k8s
   stage: deploy
   image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
@@ -66,7 +66,7 @@ Build:
     - REPLICAS=$(echo $APP_NAME | sed 's/-/_/' | tr '[:lower:]' '[:upper:]')_REPLICAS
     - echo deploying $APP_NAME with $REPLICAS replicas
     - helm package k8s/apps/$APP_NAME
-    - helm upgrade -f k8s/apps/$ENVIRONMENT_NAME.yaml $APP_NAME k8s/apps/$APP_NAME --set-string environment=dev,image=$DEPLOY_IMAGE,replicas=$REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
+    - helm upgrade -f k8s/apps/$ENVIRONMENT_NAME.yaml $APP_NAME k8s/apps/$APP_NAME --set-string environment=dev,image=quay.io/ebi-ait/$CI_PROJECT_NAME:$ENVIRONMENT_NAME-$CI_COMMIT_SHORT_SHA-$CI_PIPELINE_CREATED_AT,replicas=$REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
 
 # Reusable job for running integration tests
 # Must set $ENVIRONMENT_NAME in the job that uses this
@@ -81,14 +81,14 @@ Release dev:
   only:
     - dev
   variables:
-    IMAGE_TAG: quay.io/ebi-ait/$CI_PROJECT_NAME:dev-$CI_COMMIT_SHORT_SHA-$CI_JOB_STARTED_AT
+    ENVIRONMENT_NAME: dev
   <<: *tag_image 
 
 Release staging:
   only:
     - master
   variables:
-    IMAGE_TAG: quay.io/ebi-ait/$CI_PROJECT_NAME:staging-$CI_COMMIT_SHORT_SHA-$CI_JOB_STARTED_AT
+    ENVIRONMENT_NAME: staging
   <<: *tag_image 
 
 Release prod:
@@ -97,7 +97,7 @@ Release prod:
   when: manual
   allow_failure: false
   variables:
-    IMAGE_TAG: quay.io/ebi-ait/$CI_PROJECT_NAME:prod-$CI_COMMIT_SHORT_SHA-$CI_JOB_STARTED_AT
+    ENVIRONMENT_NAME: prod
   <<: *tag_image 
 
 Deploy dev:
@@ -106,7 +106,6 @@ Deploy dev:
   variables:
     ENVIRONMENT_NAME: dev
     DEPLOY_URL: https://dev.contribute.data.humancellatlas.org/
-    DEPLOY_IMAGE: $DEV_RELEASE_IMAGE
   <<: *deploy_k8s
 
 Deploy staging:
@@ -115,7 +114,6 @@ Deploy staging:
   variables:
     ENVIRONMENT_NAME: staging
     DEPLOY_URL: https://staging.contribute.data.humancellatlas.org/
-    DEPLOY_IMAGE: $STAGING_RELEASE_IMAGE
   <<: *deploy_k8s
 
 Deploy prod:
@@ -127,7 +125,6 @@ Deploy prod:
   variables:
     ENVIRONMENT_NAME: prod
     DEPLOY_URL: https://contribute.data.humancellatlas.org/
-    DEPLOY_IMAGE: $PROD_RELEASE_IMAGE
   <<: *deploy_k8s
 
 Integration dev:
