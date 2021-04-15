@@ -49,7 +49,7 @@ Build:
   script:
     - echo $QUAY_PASSWORD | docker login quay.io -u $QUAY_USERNAME --password-stdin
     - docker pull $IMAGE_NAME
-    - TAG_NAME=$IMAGE_REPO_BASE_DOMAIN/$CI_PROJECT_NAME:$ENVIRONMENT_NAME-$CI_COMMIT_SHORT_SHA-$(date +'%d-%m-%Y_%s')
+    - TAG_NAME=$IMAGE_REPO_BASE_DOMAIN/$CI_PROJECT_NAME:$ENVIRONMENT_NAME-$CI_COMMIT_SHORT_SHA-$(date +'%d-%m-%Y.%s')
     - docker tag $IMAGE_NAME $TAG_NAME
     - docker push $TAG_NAME
     - echo "RELEASE_TAG=$TAG_NAME" >> release_tag.env
