@@ -114,6 +114,7 @@ Deploy dev:
     - Release dev
   only:
     - dev
+  needs: ["Release dev"]
   variables:
     ENVIRONMENT_NAME: dev
     DEPLOY_URL: https://dev.contribute.data.humancellatlas.org/
@@ -122,6 +123,7 @@ Deploy dev:
 Deploy staging:
   dependencies:
     - Release staging
+  needs: ["Release staging"]
   only:
     - master
   variables:
