@@ -145,6 +145,7 @@ Deploy prod:
   <<: *deploy_k8s
 
 Integration dev:
+  needs: ["Deploy dev"]
   only:
     - dev
   variables:
@@ -152,6 +153,7 @@ Integration dev:
   <<: *run_integration
 
 Integration staging:
+  needs: ["Deploy staging"]
   only:
     - master
   variables:
