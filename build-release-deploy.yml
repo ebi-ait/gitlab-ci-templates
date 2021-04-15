@@ -62,7 +62,7 @@ Build:
       namespace: $ENVIRONMENT_NAME-environment
   script:
     - git clone $INGEST_KUBE_DEPLOYMENT_REPO k8s
-    - source k8s/config/environment_$ENVIRONMENT_NAME
+    - source k8s/config/replicas/environment_$ENVIRONMENT_NAME
     - REPLICAS=$(echo $APP_NAME | sed 's/-/_/' | tr '[:lower:]' '[:upper:]')_REPLICAS
     - echo deploying $APP_NAME with $REPLICAS replicas
     - helm package k8s/apps/$APP_NAME
