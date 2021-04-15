@@ -40,6 +40,7 @@ Build:
 
 # Reusable job for re-tagging an image
 # Must set the $ENVIRONMENT_NAME variable in the job that uses this
+# This will also save the $RELEASE_TAG env as an artifact so it can be used by downstream jobs (see https://docs.gitlab.com/ee/ci/variables/#pass-an-environment-variable-to-another-job)
 .tag_image: &tag_image
   stage: release
   tags:
@@ -47,11 +48,17 @@ Build:
   script:
     - echo $QUAY_PASSWORD | docker login quay.io -u $QUAY_USERNAME --password-stdin
     - docker pull $IMAGE_NAME
-    - docker tag $IMAGE_NAME quay.io/ebi-ait/$CI_PROJECT_NAME:$ENVIRONMENT_NAME-$CI_COMMIT_SHORT_SHA-$CI_PIPELINE_CREATED_AT
-    - docker push quay.io/ebi-ait/$CI_PROJECT_NAME:$ENVIRONMENT_NAME-$CI_COMMIT_SHORT_SHA-$CI_PIPELINE_CREATED_AT
+    - TAG_NAME=quay.io/ebi-ait/$CI_PROJECT_NAME:$ENVIRONMENT_NAME-$CI_COMMIT_SHORT_SHA-$(date +'%d-%m-%Y_%s')
+    - docker tag $IMAGE_NAME $TAG_NAME
+    - docker push $TAG_NAME
+    - echo "RELEASE_TAG=$TAG_NAME" >> release_tag.env
+  artifacts:
+    reports:
+      dotenv: release_tag.env
 
 # Reusable job for deploying to k8s
 # Must set $ENVIRONMENT_NAME, $DEPLOY_URL in the job that uses this
+# You must also set a dependency on the upstream tag_image job to receive the $RELEASE_TAG (see https://docs.gitlab.com/ee/ci/variables/#pass-an-environment-variable-to-another-job)
 .deploy_k8s: &deploy_k8s
   stage: deploy
   image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
@@ -66,7 +73,7 @@ Build:
     - REPLICAS=$(echo $APP_NAME | sed 's/-/_/' | tr '[:lower:]' '[:upper:]')_REPLICAS
     - echo deploying $APP_NAME with $REPLICAS replicas
     - helm package k8s/apps/$APP_NAME
-    - helm upgrade -f k8s/apps/$ENVIRONMENT_NAME.yaml $APP_NAME k8s/apps/$APP_NAME --set-string environment=dev,image=quay.io/ebi-ait/$CI_PROJECT_NAME:$ENVIRONMENT_NAME-$CI_COMMIT_SHORT_SHA-$CI_PIPELINE_CREATED_AT,replicas=$REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
+    - helm upgrade -f k8s/apps/$ENVIRONMENT_NAME.yaml $APP_NAME k8s/apps/$APP_NAME --set-string environment=dev,image=$RELEASE_TAG,replicas=$REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
 
 # Reusable job for running integration tests
 # Must set $ENVIRONMENT_NAME in the job that uses this
@@ -101,6 +108,8 @@ Release prod:
   <<: *tag_image 
 
 Deploy dev:
+  dependencies:
+    - Release dev
   only:
     - dev
   variables:
@@ -109,6 +118,8 @@ Deploy dev:
   <<: *deploy_k8s
 
 Deploy staging:
+  dependencies:
+    - Release staging
   only:
     - master
   variables:
@@ -117,6 +128,8 @@ Deploy staging:
   <<: *deploy_k8s
 
 Deploy prod:
+  dependencies:
+    - Release prod
   only:
     - master
   when: manual
