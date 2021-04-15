@@ -75,7 +75,7 @@ Build:
     - REPLICAS=$(eval "echo \"\$$REPLICA_VAR_NAME\"")
     - echo deploying $APP_NAME with $REPLICAS replicas
     - helm package k8s/apps/$APP_NAME
-    - helm upgrade -f k8s/apps/$ENVIRONMENT_NAME.yaml $APP_NAME k8s/apps/$APP_NAME --set-string environment=dev,image=$RELEASE_TAG,replicas=$REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
+    - helm upgrade -f k8s/apps/$ENVIRONMENT_NAME.yaml $APP_NAME k8s/apps/$APP_NAME --set-string environment=$ENVIRONMENT_NAME,image=$RELEASE_TAG,replicas=$REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
 
 # Reusable job for running integration tests
 # Must set $ENVIRONMENT_NAME in the job that uses this
