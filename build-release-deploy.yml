@@ -7,9 +7,6 @@ services:
 variables:
   APP_NAME: $CI_PROJECT_NAME
   IMAGE_NAME: quay.io/ebi-ait/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA
-  DEV_RELEASE_IMAGE: quay.io/ebi-ait/$CI_PROJECT_NAME:dev-$CI_COMMIT_TIMESTAMP
-  STAGING_RELEASE_IMAGE: quay.io/ebi-ait/$CI_PROJECT_NAME:staging-$CI_COMMIT_TIMESTAMP
-  PROD_RELEASE_IMAGE: quay.io/ebi-ait/$CI_PROJECT_NAME:prod-$CI_COMMIT_TIMESTAMP
   INGEST_KUBE_DEPLOYMENT_REPO: https://github.com/ebi-ait/ingest-kube-deployment.git
 
 # If another stage is added to project .gitlab-ci.yaml, all stages will need to be specified in project .gitlab-ci.yaml
@@ -84,14 +81,14 @@ Release dev:
   only:
     - dev
   variables:
-    IMAGE_TAG: $DEV_RELEASE_IMAGE
+    IMAGE_TAG: quay.io/ebi-ait/$CI_PROJECT_NAME:dev-$CI_COMMIT_SHORT_SHA-$CI_JOB_STARTED_AT
   <<: *tag_image 
 
 Release staging:
   only:
     - master
   variables:
-    IMAGE_TAG: $STAGING_RELEASE_IMAGE
+    IMAGE_TAG: quay.io/ebi-ait/$CI_PROJECT_NAME:staging-$CI_COMMIT_SHORT_SHA-$CI_JOB_STARTED_AT
   <<: *tag_image 
 
 Release prod:
@@ -100,7 +97,7 @@ Release prod:
   when: manual
   allow_failure: false
   variables:
-    IMAGE_TAG: $PROD_RELEASE_IMAGE
+    IMAGE_TAG: quay.io/ebi-ait/$CI_PROJECT_NAME:prod-$CI_COMMIT_SHORT_SHA-$CI_JOB_STARTED_AT
   <<: *tag_image 
 
 Deploy dev:
