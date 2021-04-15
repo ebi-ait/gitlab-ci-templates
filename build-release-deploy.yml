@@ -6,6 +6,7 @@ services:
 # Override these variables in project .gitlab-ci.yaml as required
 variables:
   APP_NAME: $CI_PROJECT_NAME
+  IMAGE_REPO_BASE_DOMAIN: quay.io/ebi-ait
   IMAGE_NAME: quay.io/ebi-ait/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA
   INGEST_KUBE_DEPLOYMENT_REPO: https://github.com/ebi-ait/ingest-kube-deployment.git
 
@@ -48,7 +49,7 @@ Build:
   script:
     - echo $QUAY_PASSWORD | docker login quay.io -u $QUAY_USERNAME --password-stdin
     - docker pull $IMAGE_NAME
-    - TAG_NAME=quay.io/ebi-ait/$CI_PROJECT_NAME:$ENVIRONMENT_NAME-$CI_COMMIT_SHORT_SHA-$(date +'%d-%m-%Y_%s')
+    - TAG_NAME=$IMAGE_REPO_BASE_DOMAIN/$CI_PROJECT_NAME:$ENVIRONMENT_NAME-$CI_COMMIT_SHORT_SHA-$(date +'%d-%m-%Y_%s')
     - docker tag $IMAGE_NAME $TAG_NAME
     - docker push $TAG_NAME
     - echo "RELEASE_TAG=$TAG_NAME" >> release_tag.env
