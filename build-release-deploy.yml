@@ -71,7 +71,7 @@ Build:
   script:
     - git clone $INGEST_KUBE_DEPLOYMENT_REPO k8s
     - source k8s/config/replicas/environment_$ENVIRONMENT_NAME
-    - REPLICA_VAR_NAME=$(echo $APP_NAME | sed 's/-/_/' | tr '[:lower:]' '[:upper:]')_REPLICAS
+    - REPLICA_VAR_NAME=$(echo $APP_NAME | sed 's/-/_/g' | tr '[:lower:]' '[:upper:]')_REPLICAS
     - REPLICAS=$(eval "echo \"\$$REPLICA_VAR_NAME\"")
     - echo deploying $APP_NAME with $REPLICAS replicas
     - helm package k8s/apps/$APP_NAME
