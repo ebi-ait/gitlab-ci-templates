@@ -26,16 +26,10 @@ workflow:
     - if: $CI_COMMIT_BRANCH == "master"
     - if: $CI_COMMIT_BRANCH == "dev"
 
-
-Lint:
-  stage: lint
-  script:
-    - echo "No linting specified. Please create a \"Lint\" job in the project template that runs on the \"lint\" stage."
-
-Unit Test:
+Test:
   stage: test
   script:
-    - echo "No tests specified. Please create a \"Unit Test\" job in the project template that runs on the \"test\" stage."
+    - echo "No tests specified. Please create a \"Test\" job in the project template that runs on the \"test\" stage."
 
 Build:
   stage: build
