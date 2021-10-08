@@ -13,6 +13,7 @@ variables:
 # If another stage is added to project .gitlab-ci.yaml, all stages will need to be specified in project .gitlab-ci.yaml
 # For example, you may want to add a unit-test stage
 stages:
+  - lint
   - test
   - build
   - release
@@ -24,6 +25,12 @@ workflow:
     - if: '$CI_PIPELINE_SOURCE == "external_pull_request_event"'
     - if: $CI_COMMIT_BRANCH == "master"
     - if: $CI_COMMIT_BRANCH == "dev"
+
+
+Lint:
+  stage: lint
+  script:
+    - echo "No linting specified. Please create a \"Lint\" job in the project template that runs on the \"lint\" stage."
 
 Unit Test:
   stage: test
