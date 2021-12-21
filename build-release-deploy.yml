@@ -110,7 +110,6 @@ Build:
   trigger:
     project: hca/ingest-integration-tests
     branch: $ENVIRONMENT_NAME
-    stage: test
     strategy: depend
 
 Release dev:
