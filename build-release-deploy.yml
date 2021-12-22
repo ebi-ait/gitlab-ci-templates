@@ -27,8 +27,7 @@ variables:
   DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
 
 services:
-  - name: docker:19.03.12-dind
-    alias: docker
+  - docker:19.03.12-dind
 
 
 # Override these variables in project .gitlab-ci.yaml as required
