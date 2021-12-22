@@ -30,6 +30,10 @@ services:
   - docker:19.03.12-dind
 
 
+before_script:
+  - docker info
+
+
 services:
   - name: quay.io/ebi-ait/ingest-base-images:docker-dind
     alias: docker
