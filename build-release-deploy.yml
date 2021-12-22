@@ -1,4 +1,28 @@
 # Template for standard CI/CD process for HCA projects
+image: docker:19.03.12
+
+variables:
+  # When using dind service, you must instruct docker to talk with the
+  # daemon started inside of the service. The daemon is available with
+  # a network connection instead of the default /var/run/docker.sock socket.
+  #
+  # The 'docker' hostname is the alias of the service container as described at
+  # https://docs.gitlab.com/ee/ci/docker/using_docker_images.html#accessing-the-services
+  #
+  # If you're using GitLab Runner 12.7 or earlier with the Kubernetes executor and Kubernetes 1.6 or earlier,
+  # the variable must be set to tcp://localhost:2375 because of how the
+  # Kubernetes executor connects services to the job container
+  # DOCKER_HOST: tcp://localhost:2375
+  #
+  DOCKER_HOST: tcp://docker:2375
+  #
+  # This instructs Docker not to start over TLS.
+  DOCKER_TLS_CERTDIR: ""
+
+services:
+  - docker:19.03.12-dind
+
+
 services:
   - name: quay.io/ebi-ait/ingest-base-images:docker-dind
     alias: docker
@@ -9,6 +33,7 @@ variables:
   IMAGE_REPO_BASE_DOMAIN: quay.io/ebi-ait
   IMAGE_NAME: quay.io/ebi-ait/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA
   INGEST_KUBE_DEPLOYMENT_REPO: https://github.com/ebi-ait/ingest-kube-deployment.git
+  
 
 # If another stage is added to project .gitlab-ci.yaml, all stages will need to be specified in project .gitlab-ci.yaml
 # For example, you may want to add a unit-test stage
