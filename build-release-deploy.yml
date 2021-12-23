@@ -1,8 +1,17 @@
 # Template for standard CI/CD process for HCA projects
 image: docker:19.03.12
 
+services:
+  - docker:19.03.12-dind
+
+
+# Override these variables in project .gitlab-ci.yaml as required
 variables:
-  # When using dind service, you must instruct Docker to talk with
+  APP_NAME: $CI_PROJECT_NAME
+  IMAGE_REPO_BASE_DOMAIN: quay.io/ebi-ait
+  IMAGE_NAME: quay.io/ebi-ait/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA
+  INGEST_KUBE_DEPLOYMENT_REPO: https://github.com/ebi-ait/ingest-kube-deployment.git
+    # When using dind service, you must instruct Docker to talk with
   # the daemon started inside of the service. The daemon is available
   # with a network connection instead of the default
   # /var/run/docker.sock socket.
@@ -25,17 +34,6 @@ variables:
   # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/4125
   DOCKER_TLS_VERIFY: 1
   DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
-
-services:
-  - docker:19.03.12-dind
-
-
-# Override these variables in project .gitlab-ci.yaml as required
-variables:
-  APP_NAME: $CI_PROJECT_NAME
-  IMAGE_REPO_BASE_DOMAIN: quay.io/ebi-ait
-  IMAGE_NAME: quay.io/ebi-ait/$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA
-  INGEST_KUBE_DEPLOYMENT_REPO: https://github.com/ebi-ait/ingest-kube-deployment.git
   
 
 # If another stage is added to project .gitlab-ci.yaml, all stages will need to be specified in project .gitlab-ci.yaml
