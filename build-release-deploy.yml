@@ -65,7 +65,7 @@ Build:
   script:
     - echo $QUAY_PASSWORD | docker login quay.io -u $QUAY_USERNAME --password-stdin
     - docker image pull $IMAGE_NAME || true
-    - docker build --pull -t $IMAGE_NAME --cache-from $IMAGE_NAME .
+    - docker build --pull -t $IMAGE_NAME --no-cache .
     - docker push $IMAGE_NAME
 
 # Reusable job for re-tagging an image
