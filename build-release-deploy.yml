@@ -98,7 +98,8 @@ Build:
     kubernetes:
       namespace: $ENVIRONMENT_NAME-environment
   script:
-    - git clone $INGEST_KUBE_DEPLOYMENT_REPO k8s
+    - GIT_TAG_NAME=ci-cd-$ENVIRONMENT_NAME
+    - git clone -b $GIT_TAG_NAME $INGEST_KUBE_DEPLOYMENT_REPO k8s
     - source k8s/config/replicas/environment_$ENVIRONMENT_NAME
     - REPLICA_VAR_NAME=$(echo $APP_NAME | sed 's/-/_/g' | tr '[:lower:]' '[:upper:]')_REPLICAS
     - REPLICAS=$(eval "echo \"\$$REPLICA_VAR_NAME\"")
