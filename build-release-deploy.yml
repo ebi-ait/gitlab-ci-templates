@@ -102,7 +102,7 @@ Build:
     - source k8s/config/replicas/environment_$ENVIRONMENT_NAME
     - REPLICA_VAR_NAME=$(echo $APP_NAME | sed 's/-/_/g' | tr '[:lower:]' '[:upper:]')_REPLICAS
     - REPLICAS=$(eval "echo \"\$$REPLICA_VAR_NAME\"")
-    - echo deploying $APP_NAME with $REPLICAS replicas
+    - echo deploying $APP_NAME with image tag $RELEASE_TAG with $REPLICAS replicas
     - helm package k8s/apps/$APP_NAME
     - helm upgrade -f k8s/apps/$ENVIRONMENT_NAME.yaml $APP_NAME k8s/apps/$APP_NAME --set-string environment=$ENVIRONMENT_NAME,image=$RELEASE_TAG,replicas=$REPLICAS,gitlab_app=$CI_PROJECT_PATH_SLUG,gitlab_env=$CI_ENVIRONMENT_SLUG --wait --install
 
@@ -196,3 +196,19 @@ Integration prod:
   variables:
     ENVIRONMENT_NAME: prod
   <<: *run_integration
+
+Merge Dev Branch to Master:
+  stage: integration
+  only:
+    - dev
+  when: manual
+  variables:
+  script:
+    - git status
+    - git fetch
+    - git checkout dev
+    - git pull
+    - git checkout master
+    - git pull
+    - git merge dev
+    - git push
