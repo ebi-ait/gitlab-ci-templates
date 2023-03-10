@@ -206,11 +206,15 @@ Integration prod:
 
 Merge Dev Branch to Master:
   stage: merge
+  image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
   only:
     - dev
   when: manual
   variables:
+    name: $ENVIRONMENT_NAME
   script:
+    - pwd
+    - which git
     - git status
     - git fetch
     - git checkout dev
