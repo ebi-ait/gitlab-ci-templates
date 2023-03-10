@@ -51,8 +51,7 @@ stages:
   - deploy
   # run integration tests
   - integration
-  # merge code in git
-  - merge
+
 
 workflow:
   rules:
@@ -204,22 +203,3 @@ Integration prod:
     ENVIRONMENT_NAME: prod
   <<: *run_integration
 
-Merge Dev Branch to Master:
-  stage: merge
-  image: quay.io/ebi-ait/ingest-base-images:dtzar_helm-kubectl-3.5.0
-  only:
-    - dev
-  when: manual
-  variables:
-    name: $ENVIRONMENT_NAME
-  script:
-    - pwd
-    - which git
-    - git status
-    - git fetch
-    - git checkout dev
-    - git pull
-    - git checkout master
-    - git pull
-    - git merge dev
-    - git push

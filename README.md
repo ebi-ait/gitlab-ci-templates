@@ -14,13 +14,21 @@ This contains jobs for executing the standard CI/CD process for projects within 
 7. Integration staging (runs integration tests on staging environment using [ingest-integration-tests](https://gitlab.ebi.ac.uk/hca/ingest-integration-tests/))
 8. Deploy prod (only on master branch and when manually triggered. Deploys to the prod cluster)
 9. Integration prod (runs integration tests on prod environment using [ingest-integration-tests](https://gitlab.ebi.ac.uk/hca/ingest-integration-tests/))
+10. Merge dev to master - merges dev branch to master branch
 
 ### Dev flow
 1. Create a feature branch and commit changes to it
+    - naming convention: `feature/dcp-xyz-title` or `bugfix/dcp-xyz-title` where xyz is the ticket number
 2. PR feature branch -> dev
+    - naming convention: `dcp-xyz title` where xyz is the ticket number
+    - put in the description the dcp-xyz and ebi-ait/dcp-ingest-central#xyz automated link keywords so that zenhub and github link the pr to the ticket
 3. Build (and unit tests if specified in project including this template) will be run automatically
 4. PR approved and merged to dev
+    - get reviews from the team
+    - address the review
+    - PR checks run successfully on gitlab
 5. Deploy to dev environment and run integration tests
+    - this happens automatically after merging the PR to dev
 6. Merge dev -> master
 7. Deploy to staging environment and run integration tests
 8. Manual wrangler testing on staging environment
