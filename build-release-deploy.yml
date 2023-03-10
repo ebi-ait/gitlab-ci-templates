@@ -41,11 +41,18 @@ variables:
 # For example, you may want to add a unit-test stage
 stages:
   - lint
+  # run compoment
   - test
+  # build docker image
   - build
+  # release docker image to docker repo (quay.io)
   - release
+  # deploy released image to k8s cluster
   - deploy
+  # run integration tests
   - integration
+  # merge code in git
+  - merge
 
 workflow:
   rules:
@@ -198,7 +205,7 @@ Integration prod:
   <<: *run_integration
 
 Merge Dev Branch to Master:
-  stage: integration
+  stage: merge
   only:
     - dev
   when: manual
