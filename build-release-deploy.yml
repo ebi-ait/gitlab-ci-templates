@@ -35,13 +35,13 @@ variables:
   # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/4125
   DOCKER_TLS_VERIFY: 1
   DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
-  
+
 
 # If another stage is added to project .gitlab-ci.yaml, all stages will need to be specified in project .gitlab-ci.yaml
 # For example, you may want to add a unit-test stage
 stages:
   - lint
-  # run compoment
+  # run component
   - test
   # build docker image
   - build
@@ -104,7 +104,7 @@ Build:
     kubernetes:
       namespace: $ENVIRONMENT_NAME-environment
   script:
-    - git clone $INGEST_KUBE_DEPLOYMENT_REPO k8s
+    - git clone --branch $BRANCH_NAME --single-branch $INGEST_KUBE_DEPLOYMENT_REPO k8s
     - source k8s/config/replicas/environment_$ENVIRONMENT_NAME
     - REPLICA_VAR_NAME=$(echo $APP_NAME | sed 's/-/_/g' | tr '[:lower:]' '[:upper:]')_REPLICAS
     - REPLICAS=$(eval "echo \"\$$REPLICA_VAR_NAME\"")
@@ -126,14 +126,14 @@ Release dev:
     - dev
   variables:
     ENVIRONMENT_NAME: dev
-  <<: *tag_image 
+  <<: *tag_image
 
 Release staging:
   only:
     - master
   variables:
     ENVIRONMENT_NAME: staging
-  <<: *tag_image 
+  <<: *tag_image
 
 Release prod:
   only:
@@ -142,7 +142,7 @@ Release prod:
   allow_failure: false
   variables:
     ENVIRONMENT_NAME: prod
-  <<: *tag_image 
+  <<: *tag_image
 
 Deploy dev:
   dependencies:
@@ -152,6 +152,7 @@ Deploy dev:
   needs: ["Release dev"]
   variables:
     ENVIRONMENT_NAME: dev
+    BRANCH_NAME: dev
     DEPLOY_URL: https://dev.contribute.data.humancellatlas.org/
   <<: *deploy_k8s
 
@@ -163,6 +164,7 @@ Deploy staging:
     - master
   variables:
     ENVIRONMENT_NAME: staging
+    BRANCH_NAME: master
     DEPLOY_URL: https://staging.contribute.data.humancellatlas.org/
   <<: *deploy_k8s
 
@@ -176,6 +178,7 @@ Deploy prod:
   allow_failure: false
   variables:
     ENVIRONMENT_NAME: prod
+    BRANCH_NAME: master
     DEPLOY_URL: https://contribute.data.humancellatlas.org/
   <<: *deploy_k8s
 
