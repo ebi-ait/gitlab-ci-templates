@@ -1,8 +1,8 @@
 # Template for standard CI/CD process for HCA projects
-image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/ingest-kube-deployment:docker_27
+image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/ingest-kube-deployment/docker:27
 
 services:
-  - name: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/ingest-kube-deployment:docker_27-dind
+  - name: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/ingest-kube-deployment/docker:27-dind
     alias: docker
 
 
