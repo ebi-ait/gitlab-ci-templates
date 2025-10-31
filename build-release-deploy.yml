@@ -1,8 +1,8 @@
 # Template for standard CI/CD process for HCA projects
-image: quay.io/ebi-ait/ingest-base-images:docker_19.03.12
+image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/ingest-kube-deployment:docker_27
 
 services:
-  - name: quay.io/ebi-ait/ingest-base-images:docker_19.03.12-dind
+  - name: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/ingest-kube-deployment:docker_27-dind
     alias: docker
 
 
